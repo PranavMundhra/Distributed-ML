@@ -10,19 +10,7 @@ The system distributes ML inference requests across multiple worker processes/ma
 
 **Keep the project intentionally minimal.** Prefer a working, testable end-to-end demonstration over extra infrastructure or features.
 
-## 2. Academic integrity and course alignment
-
-The course policy states that generative AI must not be used to implement code in labs and must not be used for assignments. Before using Claude Code to generate or modify assessed project code, the student must confirm with the instructor what assistance is permitted.
-
-When assistance is permitted:
-- Explain the design and trade-offs before proposing substantial changes.
-- Help the student understand, test, and explain every implementation.
-- Do not claim that the project satisfies a lab requirement merely because it uses a related concept.
-- Keep a clear record of design decisions and evaluation results.
-
-Relevant course topics include distributed-system architectures, client-server communication, RPC/RMI concepts, clock synchronization and logical clocks, mutual exclusion, election algorithms, fault models, failure detection, naming, and reliable group communication. The project should demonstrate a focused subset of these topics; it does **not** need to reimplement every separate lab exercise.
-
-## 3. Intended minimal architecture
+## 2. Intended minimal architecture
 
 Initial topology:
 
@@ -39,7 +27,7 @@ Initial topology:
 
 Start with one coordinator and two workers. Do not introduce leader election, distributed consensus, or multiple coordinators unless the course rubric or instructor specifically requires them. If an election algorithm is required, implement one small, clearly isolated demonstration such as the Bully algorithm rather than building a full consensus system.
 
-## 4. Technology choices
+## 3. Technology choices
 
 Use the existing project stack where appropriate:
 
@@ -56,7 +44,7 @@ The initial model should be lightweight and reproducible. Prefer a small scikit-
 
 The Python Redis client may be installed, but a Redis **server** is not part of the initial architecture. Do not add dependencies merely because they are already installed.
 
-## 5. Explicitly deferred infrastructure
+## 4. Explicitly deferred infrastructure
 
 Do **not** add these to the initial version unless there is a demonstrated requirement:
 
@@ -73,7 +61,7 @@ Do **not** add these to the initial version unless there is a demonstrated requi
 
 Use native Python processes on Windows first. Add infrastructure only when it solves a specific problem and its value can be demonstrated.
 
-## 6. Portability across collaborators' computers
+## 5. Portability across collaborators' computers
 
 The repository must work on Windows computers with different usernames, drive letters, and hardware.
 
@@ -88,7 +76,7 @@ The repository must work on Windows computers with different usernames, drive le
 - Bind a network-accessible worker to an appropriate host interface only when needed; document firewall and LAN requirements. Do not assume that `localhost` on one computer is reachable from another.
 - Avoid assuming that all machines have the same installed packages or GPU capabilities.
 
-## 7. Repository conventions
+## 6. Repository conventions
 
 Keep the codebase simple and organized. Adapt to the existing folders rather than moving files unnecessarily.
 
@@ -114,7 +102,7 @@ distributed-ml-platform/
 
 This is a guide, not a requirement to create every directory immediately. Before adding or moving files, inspect the repository and explain why the change is necessary.
 
-## 8. Implementation sequence
+## 7. Implementation sequence
 
 Work incrementally in this order:
 
@@ -133,7 +121,7 @@ Work incrementally in this order:
 
 At each stage, keep the system runnable and tests focused. Avoid implementing all stages in one large change.
 
-## 9. API and reliability guidelines
+## 8. API and reliability guidelines
 
 - Use explicit request and response schemas.
 - Return useful HTTP status codes and concise error messages.
@@ -147,7 +135,7 @@ At each stage, keep the system runnable and tests focused. Avoid implementing al
 - Do not log secrets or unnecessary personal data.
 - Clearly distinguish a worker being marked unhealthy from proof that the machine has permanently failed; heartbeat-based detection is imperfect.
 
-## 10. Testing and evaluation
+## 9. Testing and evaluation
 
 Tests should cover at least:
 
@@ -172,7 +160,7 @@ Evaluation should include:
 
 Do not fabricate measurements. Provide scripts or repeatable steps so the results can be reproduced.
 
-## 11. Coding rules for Claude Code
+## 10. Coding rules for Claude Code
 
 Before making changes:
 - Inspect the relevant files and existing tests.
@@ -196,7 +184,7 @@ After changes:
 - Explain the design in terms the student can present and defend.
 - List known limitations and the next smallest step.
 
-## 12. Git and collaboration
+## 11. Git and collaboration
 
 - Keep commits small and focused.
 - Do not commit `.env`, secrets, virtual environments, cache directories, local logs, or large generated artifacts.
@@ -205,7 +193,7 @@ After changes:
 - Ensure setup commands and documentation do not depend on one contributor's drive letter or username.
 - When changing dependencies, explain why each new dependency is needed and update the dependency file consistently.
 
-## 13. Definition of done for the first demonstrable version
+## 12. Definition of done for the first demonstrable version
 
 The first version is complete when:
 
