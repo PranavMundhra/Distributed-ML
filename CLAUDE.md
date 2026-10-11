@@ -1,133 +1,221 @@
-﻿# Claude Code Project Instructions
+import pypandoc
 
-## 1. Project Overview
+content = r"""# CLAUDE.md — Distributed ML Inference Platform
 
-Build a Python-first Distributed ML Inference Platform demonstrated across two physical machines:
+## 1. Project purpose
 
-- **CPU machine:** runs CPU-based model inference.
-- **GPU machine:** runs GPU-accelerated inference when compatible hardware and drivers are available.
+Build a small, demonstrable **Fault-Tolerant Distributed ML Inference System** for a Distributed Computing course.
 
-The platform should demonstrate distributed inference, worker registration, health monitoring, load balancing, model management, fault tolerance, and distributed algorithms.
+The system distributes ML inference requests across multiple worker processes/machines. The main academic value is demonstrating distributed-system concepts—communication, naming/registration, failure detection, fault tolerance, and measurable evaluation—not building a production-grade ML platform.
 
-## 2. Mandatory First Steps
+**Keep the project intentionally minimal.** Prefer a working, testable end-to-end demonstration over extra infrastructure or features.
 
-Before making changes to the project:
+## 2. Intended minimal architecture
 
-1. Read `README.md` and the relevant files under `docs/`.
-2. Inspect the repository structure and current Git status.
-3. Determine the current operating system, Python version, and available environment.
-4. Verify installed dependencies using the active Python interpreter.
-5. Identify the existing project root and virtual environment location.
-6. Report inconsistencies between the documentation and the actual setup.
+Initial topology:
 
-Do not assume that another developer has the same drive letters, usernames, directory structure, Python installation, or hardware.
+- **Coordinator**: accepts inference requests, tracks available workers, chooses a worker, and forwards requests.
+- **CPU worker**: runs on the coordinator machine as a separate process.
+- **GPU worker**: runs on a second Windows computer, reachable over the local network.
+- **Communication**: HTTP request/response using FastAPI and Uvicorn.
+- **Worker registry**: in-memory registry maintained by the coordinator.
+- **Load distribution**: simple round-robin routing among healthy, compatible workers.
+- **Failure detection**: workers send heartbeats; the coordinator marks a worker unavailable after a configurable timeout.
+- **Fault-tolerance demonstration**: stop or disconnect a worker and show requests being routed to another healthy compatible worker.
+- **Logical time**: add Lamport logical-clock values to relevant events or request logs as a focused distributed-computing concept.
+- **Evaluation**: measure latency, throughput, and recovery time under clearly described test conditions.
 
-## 3. Cross-Machine Compatibility
+Start with one coordinator and two workers. Do not introduce leader election, distributed consensus, or multiple coordinators unless the course rubric or instructor specifically requires them. If an election algorithm is required, implement one small, clearly isolated demonstration such as the Bully algorithm rather than building a full consensus system.
 
-The project must remain portable across Windows computers and should avoid machine-specific assumptions.
+## 3. Technology choices
 
-- Never hardcode absolute paths tied to a particular user's computer.
-- Use project-relative paths where appropriate, such as `Path(__file__).resolve()`.
-- Use `pathlib.Path` for filesystem operations.
-- Read configurable paths, host addresses, ports, and service URLs from environment variables when appropriate.
-- Provide an `.env.example` containing placeholders, never real credentials.
-- Keep machine-specific settings in local environment configuration that is excluded from Git.
-- Do not assume that every developer has a D: or E: drive.
-- Do not assume that both computers have the same Python version, GPU hardware, or installed packages.
-- Document setup commands for the relevant operating systems and shells.
-- Keep CPU inference functional without CUDA or GPU-specific dependencies.
+Use the existing project stack where appropriate:
 
-## 4. Python Environment and Dependencies
+- Python 3.11
+- FastAPI
+- Uvicorn
+- HTTPX for HTTP requests and tests
+- Pydantic / pydantic-settings for configuration and validation
+- scikit-learn and Joblib for a small CPU-friendly demonstration model
+- pytest and pytest-asyncio for tests
+- Standard Python logging
 
-Use Python 3.11 as the current development baseline unless project requirements justify changing it.
+The initial model should be lightweight and reproducible. Prefer a small scikit-learn model that can run on CPU on both computers. Treat GPU execution as an optional capability of the second worker until its GPU model, drivers, and compatible ML framework have been verified. Do not install PyTorch or other large GPU frameworks without a specific, justified need.
 
-The original development machine uses pip. Continue using the existing environment unless the user explicitly approves a package-management change.
+The Python Redis client may be installed, but a Redis **server** is not part of the initial architecture. Do not add dependencies merely because they are already installed.
 
-Do not hardcode a virtual environment's absolute interpreter path in application code, tests, or shared scripts.
+## 4. Explicitly deferred infrastructure
 
-Prefer commands that work with an activated environment:
+Do **not** add these to the initial version unless there is a demonstrated requirement:
 
-```powershell
-python -m pip install -r requirements.txt
-python -m pytest
+- Docker or Docker Compose
+- Redis server
+- PostgreSQL or another external database
+- Kafka, RabbitMQ, or another message broker
+- Kubernetes
+- gRPC
+- Authentication systems or complex authorization
+- A web dashboard or frontend
+- Multiple coordinators, consensus protocols, or advanced autoscaling
+- Model registries, elaborate model versioning, or production deployment infrastructure
+
+Use native Python processes on Windows first. Add infrastructure only when it solves a specific problem and its value can be demonstrated.
+
+## 5. Portability across collaborators' computers
+
+The repository must work on Windows computers with different usernames, drive letters, and hardware.
+
+- Never hardcode a developer's absolute path, username, drive letter, or machine-specific directory in application code.
+- Use paths relative to the project root, such as `pathlib.Path(__file__).resolve()`.
+- Read machine-specific settings from environment variables or a local `.env` file.
+- Commit `.env.example`, not real `.env` files or secrets.
+- Do not commit virtual environments, caches, generated datasets, model binaries, logs, or machine-specific configuration.
+- Keep setup instructions valid for a fresh Windows checkout.
+- Use the same Python major/minor version where practical; Python 3.11 is the current development target.
+- Make CPU the safe default. GPU support must be optional and must not prevent a CPU-only machine from starting or running tests.
+- Bind a network-accessible worker to an appropriate host interface only when needed; document firewall and LAN requirements. Do not assume that `localhost` on one computer is reachable from another.
+- Avoid assuming that all machines have the same installed packages or GPU capabilities.
+
+## 6. Repository conventions
+
+Keep the codebase simple and organized. Adapt to the existing folders rather than moving files unnecessarily.
+
+Suggested structure:
+
+```text
+distributed-ml-platform/
+├── app/
+│   ├── coordinator/
+│   ├── worker/
+│   ├── common/
+│   └── main.py
+├── models/
+├── scripts/
+├── tests/
+├── docs/
+├── .env.example
+├── .gitignore
+├── README.md
+├── CLAUDE.md
+└── requirements-lock.txt
 ```
 
-When appropriate, document activation instructions separately for Windows PowerShell and other supported shells.
+This is a guide, not a requirement to create every directory immediately. Before adding or moving files, inspect the repository and explain why the change is necessary.
 
-Do not install dependencies or upgrade major package versions without explaining why the change is necessary.
+## 7. Implementation sequence
 
-CPU and GPU machines may require different hardware-specific installation steps. Keep common application dependencies consistent wherever possible.
+Work incrementally in this order:
 
-## 5. Architecture and Implementation Order
+1. Inspect the existing files and summarize the current state before changing anything.
+2. Establish configuration, logging, and a health endpoint.
+3. Implement one worker that loads a small model and serves an inference endpoint.
+4. Implement the coordinator's worker registration and in-memory registry.
+5. Add coordinator-to-worker HTTP forwarding and round-robin selection.
+6. Add heartbeat reporting and timeout-based failure detection.
+7. Demonstrate rerouting when a worker becomes unavailable.
+8. Add simple Lamport logical-clock metadata to selected events and logs.
+9. Add automated tests for routing, worker health, failure handling, and invalid requests.
+10. Add scripts and documentation to run the coordinator and workers in separate terminals.
+11. Measure latency, throughput, and recovery time; document the setup and limitations.
+12. Add an election algorithm only if required by the rubric or instructor.
 
-Implement the platform incrementally:
+At each stage, keep the system runnable and tests focused. Avoid implementing all stages in one large change.
 
-1. FastAPI worker with health and inference endpoints.
-2. Gateway that communicates with a worker over HTTP.
-3. Worker registration and an in-memory registry.
-4. Communication between the two physical machines.
-5. Heartbeats and failure detection.
-6. Round-robin and least-loaded scheduling.
-7. CPU/GPU-aware model routing.
-8. Model registration, artifact distribution, and replication.
-9. Failure recovery and request rerouting.
-10. Required distributed algorithms, including leader election and Lamport logical clocks.
-11. Automated tests, benchmarks, and a reproducible demonstration procedure.
+## 8. API and reliability guidelines
 
-Keep the gateway, coordinator, worker, inference logic, and distributed algorithms separated into understandable modules.
+- Use explicit request and response schemas.
+- Return useful HTTP status codes and concise error messages.
+- Set finite timeouts on coordinator-to-worker requests.
+- Handle a worker timeout or connection error without crashing the coordinator.
+- Never route a request to a worker known to be unhealthy.
+- If no compatible worker is available, return a clear service-unavailable response.
+- Avoid infinite retries and retry storms.
+- Make worker registration and heartbeat updates safe against malformed or stale data.
+- Log request IDs, selected worker IDs, status, elapsed time, and relevant logical-clock values.
+- Do not log secrets or unnecessary personal data.
+- Clearly distinguish a worker being marked unhealthy from proof that the machine has permanently failed; heartbeat-based detection is imperfect.
 
-## 6. Infrastructure Constraints
+## 9. Testing and evaluation
 
-Docker and the Redis server are intentionally deferred for the initial prototype.
+Tests should cover at least:
 
-- Do not require Docker or Redis to run the first working prototype.
-- Start with native Python processes and an in-memory registry.
-- Add Redis only when shared state or coordination requirements justify it.
-- Add PostgreSQL when persistent metadata or inference records are needed.
-- Introduce Docker when reproducible deployment or service isolation provides a clear benefit.
+- Worker health endpoint.
+- Successful inference on a worker.
+- Worker registration and registry updates.
+- Round-robin distribution across healthy workers.
+- Skipping or removing an unhealthy worker.
+- Timeout and connection-error handling.
+- Clear behavior when no workers are available.
+- Invalid request payloads.
+- Basic logical-clock ordering or monotonicity, if logical clocks are implemented.
 
-The Python Redis client being installed does not imply that a Redis server is running.
+Evaluation should include:
+- Test environment and hardware description.
+- Number of requests and concurrency/load settings.
+- Average and preferably median/p95 latency where feasible.
+- Throughput over a stated interval.
+- Time from worker failure to detection and recovery.
+- Results with both workers available versus one worker unavailable.
+- Limitations, including LAN variability and the difference between a controlled demo and production fault tolerance.
 
-## 7. Configuration and Security
+Do not fabricate measurements. Provide scripts or repeatable steps so the results can be reproduced.
 
-- Never commit passwords, API tokens, private keys, or real `.env` files.
-- Keep `.env`, virtual environments, caches, datasets, logs, and large model artifacts out of Git.
-- Do not expose development services publicly without an explicit security design.
-- Use configurable worker URLs rather than hardcoded LAN IP addresses.
-- Apply request timeouts, input validation, and appropriate error handling to network calls.
-- Do not assume a trusted network removes the need for access controls.
+## 10. Coding rules for Claude Code
 
-## 8. Coding and Testing Standards
+Before making changes:
+- Inspect the relevant files and existing tests.
+- State the smallest sensible plan.
+- Preserve existing working code unless a change is justified.
+- Ask before adding a large dependency, infrastructure service, or broad refactor.
 
-- Inspect existing files before editing them.
-- Explain the intended changes before making broad architectural modifications.
-- Prefer small, testable implementations over large rewrites.
-- Test distributed algorithms independently before integration.
-- Add or update tests when changing behavior.
-- Run relevant tests using the active project environment.
-- Report actual test results; never claim that unexecuted tests passed.
-- Avoid adding dependencies when the standard library or existing packages are sufficient.
+While implementing:
+- Prefer straightforward, readable Python over clever abstractions.
+- Keep functions and modules focused.
+- Add type hints where useful.
+- Use configuration rather than hardcoded machine-specific values.
+- Avoid speculative features and premature optimization.
+- Do not silently change the architecture or introduce an external service.
+- Do not overwrite user work or delete files without explaining the impact and obtaining confirmation when appropriate.
 
-## 9. Documentation and Handoffs
+After changes:
+- Run relevant tests and report the exact commands and outcomes.
+- If a command cannot run, state why instead of claiming success.
+- Update README or setup documentation when behavior or commands change.
+- Explain the design in terms the student can present and defend.
+- List known limitations and the next smallest step.
 
-Keep these files current:
+## 11. Git and collaboration
 
-- `README.md`: project purpose, setup, and quick start.
-- `docs/PROJECT_PLAN.md`: implementation checklist and progress.
-- `docs/DECISIONS.md`: architectural decisions and rationale.
-- `docs/SETUP_WINDOWS.md`: Windows setup and networking instructions.
-- `CLAUDE.md`: durable instructions for future Claude Code sessions.
+- Keep commits small and focused.
+- Do not commit `.env`, secrets, virtual environments, cache directories, local logs, or large generated artifacts.
+- Use `.env.example` for documented configuration keys with safe placeholder values.
+- Do not rewrite shared Git history or force-push unless explicitly requested.
+- Ensure setup commands and documentation do not depend on one contributor's drive letter or username.
+- When changing dependencies, explain why each new dependency is needed and update the dependency file consistently.
 
-At the end of each meaningful task, report:
+## 12. Definition of done for the first demonstrable version
 
-1. What changed.
-2. Which files changed.
-3. Which commands and tests were executed.
-4. Any outstanding issues.
-5. The recommended next step.
+The first version is complete when:
 
-## 10. Definition of Done
+1. The coordinator starts on the CPU machine.
+2. A CPU worker starts as a separate process.
+3. A second worker can start on another computer and communicate over the LAN.
+4. An inference request is routed to a healthy worker and returns a valid result.
+5. Requests are distributed across available workers using the selected simple policy.
+6. When one worker is stopped or made unreachable, the coordinator detects the failure after the configured timeout and routes requests to another compatible worker.
+7. Logs and repeatable evaluation steps demonstrate the behavior.
+8. Tests and Windows setup instructions are available.
+9. The student can explain the architecture, failure-detection limitations, and measured results.
 
-A task is complete only when the requested behavior is implemented, relevant tests have been run, and important configuration or architectural decisions have been documented.
+**Default decision rule:** If a feature is not needed for this demonstration, the course rubric, or an explicitly approved extension, leave it out.
+"""
 
-Before beginning a new task, inspect the current project state rather than assuming previous work was completed.
+output_path = "/mnt/data/CLAUDE.md"
+pypandoc.convert_text(
+    content,
+    to="md",
+    format="md",
+    outputfile=output_path,
+    extra_args=["--standalone"],
+)
+print(f"Created {output_path}")
