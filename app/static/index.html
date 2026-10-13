@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#111014">
+    <title>Iris inference · ML Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/app.js" defer></script>
+</head>
+<body>
+    <div class="shell">
+        <header class="topbar">
+            <a class="brand" href="/" aria-label="ML Platform home"><span class="brand-mark" aria-hidden="true">M</span> ML Platform</a>
+            <span class="tag">Local prototype</span>
+        </header>
+        <main>
+            <div class="intro">
+                <p class="eyebrow">SINGLE-MACHINE INFERENCE</p>
+                <h1>A small model.<br>A complete request.</h1>
+                <p class="lede">Enter four flower measurements. Your gateway sends them to a CPU worker to predict an Iris species.</p>
+            </div>
+            <section class="service-strip" aria-label="Service status" aria-live="polite" aria-atomic="true">
+                <div><span class="dot" id="gateway-dot" aria-hidden="true"></span><span>Gateway</span><strong id="gateway-status">Checking…</strong></div>
+                <div><span class="dot" id="worker-dot" aria-hidden="true"></span><span>CPU worker</span><strong id="worker-status">Checking…</strong></div>
+                <button type="button" class="text-button" id="refresh-status">Refresh status</button>
+            </section>
+            <div class="workspace">
+                <section class="panel input-panel" aria-labelledby="input-title">
+                    <div class="section-heading"><h2 id="input-title">Flower measurements</h2><span class="unit">centimeters</span></div>
+                    <p class="muted">Use a sample or enter values above 0 and up to 100 cm.</p>
+                    <fieldset class="presets"><legend>Try a sample</legend>
+                        <button type="button" data-preset="setosa">Setosa</button>
+                        <button type="button" data-preset="versicolor">Versicolor</button>
+                        <button type="button" data-preset="virginica">Virginica</button>
+                    </fieldset>
+                    <form id="inference-form">
+                        <div class="input-grid">
+                            <div class="field"><label for="sepal-length">Sepal length <span>cm</span></label><input id="sepal-length" name="sepal_length" type="number" min="0" max="100" step="any" value="5.1" required inputmode="decimal"></div>
+                            <div class="field"><label for="sepal-width">Sepal width <span>cm</span></label><input id="sepal-width" name="sepal_width" type="number" min="0" max="100" step="any" value="3.5" required inputmode="decimal"></div>
+                            <div class="field"><label for="petal-length">Petal length <span>cm</span></label><input id="petal-length" name="petal_length" type="number" min="0" max="100" step="any" value="1.4" required inputmode="decimal"></div>
+                            <div class="field"><label for="petal-width">Petal width <span>cm</span></label><input id="petal-width" name="petal_width" type="number" min="0" max="100" step="any" value="0.2" required inputmode="decimal"></div>
+                        </div>
+                        <button class="primary-button" id="run-button" type="submit">Run inference <span aria-hidden="true">↗</span></button>
+                    </form>
+                    <p class="form-note">Sample names describe the source examples; predictions come from the model.</p>
+                </section>
+                <section class="panel result-panel" aria-labelledby="result-title" aria-busy="false" id="result-panel">
+                    <div class="section-heading"><h2 id="result-title">Prediction</h2><span class="unit">CPU / Iris</span></div>
+                    <div id="empty-result" class="empty-result"><div class="flower-symbol" aria-hidden="true">✳</div><h3>Ready when you are</h3><p class="muted">Run inference to see the predicted species and its probability.</p></div>
+                    <div id="result" hidden>
+                        <p class="eyebrow result-label">PREDICTED SPECIES</p>
+                        <h3 id="prediction"></h3>
+                        <p class="confidence"><strong id="confidence"></strong> model confidence</p>
+                        <div class="probabilities" id="probabilities" aria-label="Species probabilities"></div>
+                        <p class="result-caveat">Probabilities express the model's estimate, not a guarantee of accuracy.</p>
+                        <dl class="metadata"><div><dt>Model</dt><dd id="model-name"></dd></div><div><dt>Worker</dt><dd id="worker-id"></dd></div><div><dt>Request</dt><dd id="request-id"></dd></div></dl>
+                    </div>
+                    <p id="feedback" class="feedback" role="status" aria-live="polite" aria-atomic="true"></p>
+                </section>
+            </div>
+            <p class="flow-note">Browser <span aria-hidden="true">→</span> Gateway <span aria-hidden="true">→</span> CPU worker <span aria-hidden="true">→</span> Prediction</p>
+        </main>
+        <footer><span>Learning prototype · one gateway, one worker</span><a href="/docs">API docs <span aria-hidden="true">↗</span></a></footer>
+    </div>
+    <noscript><p class="noscript">JavaScript is required for this page. Use the API at <a href="/docs">/docs</a> or send a POST request to /predict.</p></noscript>
+</body>
+</html>

@@ -38,3 +38,6 @@ models/*
 
 # Logs
 *.log
+
+#Markdowns/Reference
+docs/Base
