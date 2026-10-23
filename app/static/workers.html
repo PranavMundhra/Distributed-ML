@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#111014">
+    <title>Worker nodes · ML Platform</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/workers.js" defer></script>
+</head>
+<body>
+    <div class="shell">
+        <header class="topbar">
+            <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">M</span> ML Platform</a>
+            <nav class="top-nav" aria-label="Main navigation"><a href="/">Inference</a><a href="/workers" aria-current="page">Worker nodes</a></nav>
+        </header>
+        <main>
+            <div class="intro">
+                <p class="eyebrow">DISTRIBUTED COMPUTING DEMO</p>
+                <h1>See each worker.<br>Watch recovery.</h1>
+                <p class="lede">Follow real heartbeats, worker availability and completed predictions. Pause one worker to demonstrate failure detection and survivor routing.</p>
+            </div>
+            <section class="service-strip" aria-label="Cluster summary">
+                <div><span class="dot" id="cluster-dot" aria-hidden="true"></span><span>Gateway</span><strong id="cluster-status">Connecting…</strong></div>
+                <div><span>Workers</span><strong id="node-count">Checking…</strong></div>
+                <button class="text-button" type="button" id="refresh-nodes">Refresh now</button>
+            </section>
+            <section class="panel demo-panel" aria-labelledby="demo-title">
+                <div class="section-heading"><h2 id="demo-title">Demonstrate distribution and recovery</h2><span class="unit" id="demo-mode">Checking controls…</span></div>
+                <ol class="demo-steps">
+                    <li>Send six requests and watch the worker IDs alternate.</li>
+                    <li>Pause one worker. Its heartbeats stop and new inference is rejected.</li>
+                    <li>Wait for it to become unavailable, then send six requests to the survivor.</li>
+                    <li>Resume the paused worker. Its next heartbeat restores eligibility.</li>
+                </ol>
+                <p class="form-note">Pause is a simulated service failure: the process stays running so it can resume. A real process crash can also be demonstrated by stopping a worker in its terminal. Requests already running may finish; failed predictions are not automatically retried.</p>
+                <button type="button" class="primary-button" id="send-batch">Send 6 Iris requests ↗</button>
+                <p id="demo-feedback" class="feedback" role="status" aria-live="polite"></p>
+                <p id="batch-summary" class="muted"></p>
+                <ol id="batch-results" class="batch-results" aria-label="Latest demonstration requests"></ol>
+            </section>
+            <div class="section-heading nodes-heading"><h2>Registered worker nodes</h2><span class="unit">Refreshes every second</span></div>
+            <p id="nodes-empty" class="muted">Waiting for the gateway…</p>
+            <div class="node-grid" id="node-cards"></div>
+            <section class="panel history-panel" aria-labelledby="history-title">
+                <div class="section-heading"><h2 id="history-title">Recent completed requests</h2><span class="unit">Latest 20</span></div>
+                <p class="form-note">Validated predictions forwarded by this gateway. Each trace shows the real message path. Counts reset for a new worker process; gateway restart clears counters and history.</p>
+                <div class="history-scroll"><table class="history-table"><thead><tr><th scope="col">Time</th><th scope="col">Model</th><th scope="col">Worker</th><th scope="col">Trace</th></tr></thead><tbody id="request-history"></tbody></table></div>
+                <p class="muted" id="history-empty">Send an inference request to see which worker handled it.</p>
+            </section>
+            <p class="flow-note">This page reads registry state without health probes or heartbeat renewal. <a href="/workers?format=json">View worker JSON</a></p>
+        </main>
+        <footer><span>Local worker demonstration · CPU inference</span><a href="/">Back to inference ↗</a></footer>
+    </div>
+    <noscript><p class="noscript">JavaScript is required for the live worker dashboard. Use <a href="/workers?format=json">the worker JSON API</a>.</p></noscript>
+</body>
+</html>

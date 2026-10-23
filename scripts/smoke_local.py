@@ -45,16 +45,19 @@ def main() -> int:
     environment = os.environ.copy()
     environment["WORKER_URL"] = worker_url
     environment["REQUEST_TIMEOUT_SECONDS"] = "5"
-    environment["WORKER_ID"] = "smoke-cpu-worker"
     environment["PYTHONUNBUFFERED"] = "1"
     with tempfile.TemporaryDirectory(prefix="ml-smoke-") as directory:
         log_path = Path(directory) / "services.log"
         with log_path.open("w+", encoding="utf-8") as log_file:
             def start(module: str, port: int, service: str) -> subprocess.Popen:
+                child_environment = environment.copy()
+                if service == "worker":
+                    child_environment["GATEWAY_URL"] = gateway_url
+                    child_environment["WORKER_ID"] = "smoke-cpu-worker"
                 child = subprocess.Popen(
                     [sys.executable, "-m", "uvicorn", module, "--host", "127.0.0.1", "--port", str(port)],
                     cwd=ROOT,
-                    env=environment,
+                    env=child_environment,
                     stdout=log_file,
                     stderr=subprocess.STDOUT,
                     creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
@@ -64,8 +67,8 @@ def main() -> int:
                 return child
 
             try:
-                worker = start("app.worker.main:app", worker_port, "worker")
                 start("app.coordinator.main:app", gateway_port, "gateway")
+                worker = start("app.worker.main:app", worker_port, "worker")
                 status, page, _ = request(gateway_url + "/")
                 assert status == 200 and b"<html" in page.lower(), "UI page was not served"
                 for asset in ("/static/style.css", "/static/app.js"):

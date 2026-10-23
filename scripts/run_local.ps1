@@ -1,7 +1,8 @@
 param(
     [string]$Python = "",
     [int]$GatewayPort = 8000,
-    [int]$WorkerPort = 8001
+    [int]$WorkerPort = 8001,
+    [int]$WorkerCount = 2
 )
 
 $ErrorActionPreference = "Stop"
@@ -15,5 +16,5 @@ if (-not $Python) {
     }
 }
 
-& $Python (Join-Path $PSScriptRoot "run_local.py") --gateway-port $GatewayPort --worker-port $WorkerPort
+& $Python (Join-Path $PSScriptRoot "run_local.py") --gateway-port $GatewayPort --worker-port $WorkerPort --worker-count $WorkerCount
 exit $LASTEXITCODE

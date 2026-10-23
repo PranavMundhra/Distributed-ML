@@ -30,14 +30,19 @@ def prediction(request_id="gateway-test"):
 
 
 @contextmanager
-def gateway_client(handler):
+def gateway_client(handler, registered=True):
     upstream = httpx.AsyncClient(transport=httpx.MockTransport(handler))
     application = create_app(
-        GatewaySettings(worker_url="http://worker.test:8001", request_timeout_seconds=0.25),
+        GatewaySettings(request_timeout_seconds=0.25),
         client=upstream,
     )
     with TestClient(application) as client:
         try:
+            if registered:
+                assert client.post("/workers/register", json={
+                    "worker_id": "test-worker", "worker_url": "http://worker.test:8001",
+                    "model": "iris-logistic-regression-v1",
+                }).status_code == 201
             yield client, application, upstream
         finally:
             client.portal.call(upstream.aclose)
@@ -70,8 +75,8 @@ def test_gateway_forwards_features_request_id_and_configured_timeout():
 
 @pytest.mark.asyncio
 async def test_gateway_calls_real_worker_in_process():
-    worker = create_worker(WorkerSettings(worker_id="real-cpu-worker"))
-    gateway_settings = GatewaySettings(worker_url="http://worker.test")
+    worker = create_worker(WorkerSettings(worker_id="real-cpu-worker", gateway_url=None))
+    gateway_settings = GatewaySettings()
     async with worker.router.lifespan_context(worker):
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=worker)) as upstream:
             gateway = create_app(gateway_settings, client=upstream)
@@ -79,6 +84,11 @@ async def test_gateway_calls_real_worker_in_process():
                 async with httpx.AsyncClient(
                     transport=httpx.ASGITransport(app=gateway), base_url="http://gateway.test"
                 ) as client:
+                    registered = await client.post("/workers/register", json={
+                        "worker_id": "real-cpu-worker", "worker_url": "http://worker.test",
+                        "model": "iris-logistic-regression-v1",
+                    })
+                    assert registered.status_code == 201
                     health = await client.get("/health")
                     assert health.status_code == 200
                     assert health.json()["worker_available"] is True
@@ -241,13 +251,17 @@ async def test_gateway_enforces_total_deadline_for_delayed_worker(path):
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(delayed_worker)) as upstream:
         application = create_app(
-            GatewaySettings(worker_url="http://worker.test", request_timeout_seconds=0.05),
+            GatewaySettings(request_timeout_seconds=0.05),
             client=upstream,
         )
         async with application.router.lifespan_context(application):
             async with httpx.AsyncClient(
                 transport=httpx.ASGITransport(app=application), base_url="http://gateway.test"
             ) as client:
+                assert (await client.post("/workers/register", json={
+                    "worker_id": "test-worker", "worker_url": "http://worker.test",
+                    "model": "iris-logistic-regression-v1",
+                })).status_code == 201
                 request = (
                     client.post(path, json={"features": FEATURES}, headers={"X-Request-ID": "deadline-test"})
                     if path == "/predict" else client.get(path)

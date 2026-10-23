@@ -9,6 +9,6 @@ from app.worker.main import create_app
 
 @pytest.fixture(scope="module")
 def worker_client():
-    application = create_app(WorkerSettings(worker_id="test-cpu-worker"))
+    application = create_app(WorkerSettings(worker_id="test-cpu-worker", gateway_url=None))
     with TestClient(application) as client:
         yield client

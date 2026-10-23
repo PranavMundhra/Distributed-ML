@@ -90,7 +90,7 @@ def test_worker_accepts_measurement_upper_bound(worker_client):
 
 
 def test_worker_reuses_model_and_cleans_up_lifespan():
-    application = create_app(WorkerSettings(worker_id="lifecycle-worker"))
+    application = create_app(WorkerSettings(worker_id="lifecycle-worker", gateway_url=None))
     with TestClient(application) as client:
         model = application.state.model
         assert model is not None

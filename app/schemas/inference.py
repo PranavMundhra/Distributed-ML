@@ -58,5 +58,7 @@ class GatewayHealth(BaseModel):
     service: Literal["gateway"] = "gateway"
     ready: bool
     worker_available: bool
-    worker_url: str
+    worker_url: str | None = None
     worker_id: str | None = None
+    registered_workers: int = 0
+    available_workers: int = 0

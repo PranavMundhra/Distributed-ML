@@ -1,0 +1,6 @@
+# Additional tools for preparing/rebuilding the two ONNX demo models.
+# Install alongside requirements-prototype.txt, which includes serving dependencies.
+onnx>=1.17,<2
+onnxruntime>=1.20,<2
+skl2onnx>=1.18,<2
+Pillow>=11,<13
