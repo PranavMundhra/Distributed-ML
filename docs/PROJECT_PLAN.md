@@ -1,5 +1,9 @@
 ﻿# Project plan
 
+## Current scope (2026-10-24)
+
+Keep one gateway acting as coordinator and two inference workers. The user decided not to add Bully election or coordinator takeover. The next demonstration work is two-PC LAN verification, followed by latency, throughput and worker recovery measurements. The gateway remains a single point of failure.
+
 ## Setup
 - [x] Python 3.11 environment created on D:
 - [x] Core dependencies installed using pip
@@ -129,7 +133,7 @@ Verification (2026-10-24, Python 3.12.14 verification environment):
 - Browser: model selection, Iris prediction, historical USD house prediction, face preview/example, actual file-picker upload and image prediction verified; repeated image inference used the second worker and retained a complete trace. Narrow layout visually inspected; no browser warnings/errors. Screenshot saved outside the repository in the workspace verification folder.
 - JavaScript syntax and Git whitespace checks passed. Temporary verification services were stopped after checks.
 
-The new image upload accepts inference input only. Public ML-model uploading, authentication and generic model schemas remain deferred. Artifacts are manually prepared/copied to each worker; this is model replication, not an automatic model-distribution protocol. Bully coordinator takeover, two-PC verification and performance benchmarks remain pending. No commits were made.
+The new image upload accepts inference input only. Public ML-model uploading, authentication and generic model schemas remain deferred. Artifacts are manually prepared/copied to each worker; this is model replication, not an automatic model-distribution protocol. Two-PC verification and performance benchmarks remain pending; Bully coordinator takeover was subsequently excluded from scope. No commits were made during this milestone's verification.
 
 ## Milestone 5: worker dashboard and failure demonstration
 
@@ -151,7 +155,26 @@ Verification (Python 3.12.14 verification environment):
 
 Pause simulates service failure while keeping the worker process alive for resume; the automated and manual terminal demonstrations support genuine process stops separately. Failed in-flight predictions are not retried. Demo pause does not implement coordinator election, permanent failure proof or two-machine operation. No commits were made.
 
+## Milestone 6: LAN launchers and verification tooling
+
+- [x] Separate gateway/worker terminal commands with explicit private IPv4 binding and advertisement
+- [x] Local address/port preflight and worker-to-gateway connection check
+- [x] CLI identity/address overrides and explicitly disabled LAN demo controls
+- [x] Checker requires distinct worker IPs by default and validates advancing heartbeats
+- [x] All-model round robin and causal traces tied to registered process identities
+- [x] Actual worker stop/restart and survivor checks after heartbeat expiry
+- [x] Two-PC guide covering fresh environments, model transfer, firewall access and recovery
+
+Verification (2026-10-24, Python 3.12.14 verification environment):
+
+- `python -m pytest -x -q --tb=short`: 361 passed, including 35 LAN checks; one existing Starlette TestClient deprecation warning.
+- `python scripts/smoke_lan.py --ip <this-PC-private-IPv4>`: actual CLI services bound to the development PC's private interface on temporary ports; the default checker rejected one-IP placement; explicit local-rehearsal checks passed all three models and traces; inherited demo controls stayed disabled; actual worker process stop triggered expiry and survivor routing; restart created a new identity and restored routing; workers re-registered after gateway restart. Owned processes were cleaned up.
+- Initial sandbox runs could not access temporary files. The complete suite and process rehearsal passed outside that sandbox without changing system security settings.
+
+This milestone implements and locally verifies LAN tooling. It does not complete physical two-PC verification or performance benchmarks. No application/UI inference behavior or dependencies changed. See [LAN_DEMO.md](LAN_DEMO.md) for the remaining physical demonstration.
+
 ## Two-machine demonstration
+- [x] Add private-interface launchers and two-PC setup/checker (rehearsed on one PC)
 - [ ] Optionally confirm GPU model and driver if GPU execution is needed (CPU is sufficient)
 - [ ] Run one worker per physical machine
 - [ ] Configure LAN communication and firewall
@@ -164,7 +187,8 @@ Pause simulates service failure while keeping the worker process alive for resum
 - [x] Local complete model replicas on each worker
 - [ ] Automatic model distribution between physical machines
 - [x] Lamport clocks and a request trace (verified locally)
-- [ ] Bully leader election with working coordinator takeover
 - [ ] Benchmark latency, throughput, and recovery time
+
+Bully leader election and coordinator takeover are excluded by the current scope decision.
 
 Update this checklist only when tasks are actually verified.

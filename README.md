@@ -42,6 +42,39 @@ For a presentation, use the dashboard's **Send 6 Iris requests** button, pause o
 
 Alternatively, use `powershell -ExecutionPolicy Bypass -File scripts/run_local.ps1`. The launcher supports `--gateway-port`, `--worker-port` (first worker port), and `--worker-count` (default 2); the PowerShell wrapper supports `-Python`, `-GatewayPort`, `-WorkerPort`, and `-WorkerCount`.
 
+## Two-PC LAN setup
+
+Use separate terminals so either worker can be stopped independently. The following addresses are examples: replace them with each PC's connected-adapter IPv4 address from `ipconfig`.
+
+PC 1, gateway terminal:
+
+```bat
+.venv\Scripts\python.exe scripts\run_lan.py gateway --ip 192.168.1.10
+```
+
+PC 1, Worker 1 terminal:
+
+```bat
+.venv\Scripts\python.exe scripts\run_lan.py worker --ip 192.168.1.10 --gateway-ip 192.168.1.10 --worker-id cpu-worker-1
+```
+
+PC 2, Worker 2 terminal:
+
+```bat
+.venv\Scripts\python.exe scripts\run_lan.py worker --ip 192.168.1.11 --gateway-ip 192.168.1.10 --worker-id cpu-worker-2
+```
+
+Prepare/copy the fixed model artifacts and install a fresh environment on PC 2 first. On the existing development PC, use `..\.verify-venv\Scripts\python.exe` if needed. Open `http://192.168.1.10:8000/workers`. The LAN launcher disables local pause/resume controls; stop Worker 2 with Ctrl+C in its own terminal for a real failure demonstration.
+
+From another PC 1 terminal, check normal routing, then run the second command after stopping Worker 2:
+
+```bat
+.venv\Scripts\python.exe scripts\check_lan.py --gateway-ip 192.168.1.10
+.venv\Scripts\python.exe scripts\check_lan.py --gateway-ip 192.168.1.10 --failed-worker cpu-worker-2
+```
+
+The checker requires distinct LAN worker IPs, advancing heartbeats, all three models and valid Lamport traces. Each check sends 24 predictions. Restart Worker 2 and rerun the normal check to demonstrate recovery. See the [complete LAN guide](docs/LAN_DEMO.md) for model transfer, firewall access, port options and troubleshooting. The tooling passed a one-PC private-interface rehearsal; physical two-PC verification remains pending.
+
 ## API and checks
 
 ```powershell
@@ -64,6 +97,7 @@ Feature order is sepal length, sepal width, petal length, petal width in centime
 
 - [Prepared demo models](docs/DEMO_MODELS.md): locally trained house-price regression and a pretrained male/female face classifier, both in ONNX, with examples, provenance and validation. All three fixed models are connected to the interface and compatible workers. Public model uploads remain deferred.
 - [User guide](docs/USER_GUIDE.md): setup, UI/API usage, configuration, stopping and restarting, troubleshooting, and the five study references.
+- [Two-PC LAN demonstration](docs/LAN_DEMO.md): separate gateway/worker launchers, distinct-address checks and actual stop/restart demonstration.
 - [Project plan](docs/PROJECT_PLAN.md): verified progress and remaining work.
 - [Architecture guidance](CLAUDE.md): intended minimal distributed demonstration.
 
@@ -71,8 +105,8 @@ Workers register at `POST /workers/register` with their ID, service origin, load
 
 By default, workers send heartbeats every 2 seconds. After 8 seconds without registration or an accepted heartbeat, the gateway marks a worker unavailable; its expiry task checks every 0.5 seconds. Health probes and predictions cannot renew an expired heartbeat lease. A new valid heartbeat or worker registration restores eligibility. The launcher keeps the gateway and surviving workers running if one worker exits.
 
-Run one gateway Uvicorn process: its registry and per-model round-robin cursors are in memory. Workers automatically re-register when a restarted gateway reports them unknown. A failed prediction is still returned without retry; new requests skip unavailable workers. Bounded retry/failover for an in-flight prediction, a verified two-PC run, optional GPU execution, Bully election, and benchmarks remain future work. Heartbeat expiry indicates suspected unavailability, not proof of permanent machine failure.
+Run one gateway Uvicorn process: its registry and per-model round-robin cursors are in memory. Workers automatically re-register when a restarted gateway reports them unknown. A failed prediction is still returned without retry; new requests skip unavailable workers. Bounded retry/failover for an in-flight prediction, a verified two-PC run, optional GPU execution, and benchmarks remain future work. Bully election and coordinator takeover are outside the agreed project scope; the gateway remains a single point of failure. Heartbeat expiry indicates suspected unavailability, not proof of permanent machine failure.
 
-The latest checks passed 326 tests and `scripts/smoke_workers.py`: dashboard counters/traces, demo pause, all-model survivor routing, resume, actual worker process stop/restart, and gateway restart recovery. Browser verification showed 3/3 routing, heartbeat expiry, six survivor requests and recovery to 3/3, without browser warnings/errors. Previous model and heartbeat checks are recorded in the project plan. Windows Application Control blocked native libraries in the original Python 3.11 environment on this PC. Verification used a separate Python 3.12.14 environment at `D:\WORK\CODING\PYTHON\DC\.verify-venv`, with scikit-learn 1.7.2 (within the supported range); the original environment and system security settings were preserved. See the user guide for the working launch command on this PC.
+The latest checks passed 361 tests and `scripts/smoke_lan.py --ip <this-PC-private-IPv4>`: LAN-interface launchers, same-IP rejection by the default checker, disabled inherited demo controls, all-model routing/traces, actual worker stop/restart and gateway restart recovery. This was a one-PC rehearsal. Earlier `scripts/smoke_workers.py` and browser verification covered dashboard counters/traces, demo pause, heartbeat expiry, six survivor requests and recovery to 3/3 without browser warnings/errors. Previous model and heartbeat checks are recorded in the project plan. Windows Application Control blocked native libraries in the original Python 3.11 environment on this PC. Verification used a separate Python 3.12.14 environment at `D:\WORK\CODING\PYTHON\DC\.verify-venv`, with scikit-learn 1.7.2 (within the supported range); the original environment and system security settings were preserved. See the user guide for the working launch command on this PC.
 
 `requirements-prototype.txt` contains the dependencies needed for this version; the original broader `requirements-lock.txt` remains available. Configuration uses safe defaults and optional root `.env` values documented in `.env.example`. Keep environments, logs, and model binaries out of Git.
